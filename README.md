@@ -1,5 +1,10 @@
 **Product Management System**
 
+<img width="1793" height="891" alt="image" src="https://github.com/user-attachments/assets/5059b2e3-1f29-4b12-baba-e4d644a232c8" />
+<img width="1905" height="885" alt="image" src="https://github.com/user-attachments/assets/21cbf7b2-f811-40f4-a9f1-d61f6984b82b" />
+
+
+
 This is a simple Product Management System built for CRUD operations using:
 - ASP.NET Core Web API (Backend)
 - SQL Server with Stored Procedures (Database)

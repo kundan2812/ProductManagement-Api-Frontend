@@ -61,21 +61,21 @@ app.controller("productCtrl", function ($scope, $http) {
                 return;
             }
             if (file.size > 3 * 1024 * 1024) {
-                $scope.showMessage("Image size must be less than 2MB!", false);
+                $scope.showMessage("Image size must be less than 3MB!", false);
                 return;
             }
         }
         if ($scope.isEdit) {
             $http.put(baseUrl + "/EditItem", $scope.form)
                 .then(() => {
-                    $scope.showMessage("Item updated successfully!", true);
+                    $scope.showMessage(res.data.message || "Item updated successfully!", true);
                     $scope.loadItems();
                     $scope.cancelForm();
                 }, () => $scope.showMessage("Error updating item", false));
         } else {
             $http.post(baseUrl + "/AddItem", $scope.form)
                 .then(() => {
-                    $scope.showMessage("Item added successfully!", true);
+                    $scope.showMessage(res.data.message || "Item added successfully!", true);
                     $scope.loadItems();
                     $scope.cancelForm();
                 }, () => $scope.showMessage("Error adding item", false));

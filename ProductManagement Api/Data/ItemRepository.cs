@@ -20,7 +20,6 @@ namespace ProductManagement_Api.Data
             using SqlConnection con = new SqlConnection(_connString);
             using SqlCommand cmd = new SqlCommand("AddItem", con);
             cmd.CommandType = CommandType.StoredProcedure;
-
             cmd.Parameters.AddWithValue("@ItemCode", model.ItemCode);
             cmd.Parameters.AddWithValue("@Description", model.Description);
             cmd.Parameters.AddWithValue("@SellingPrice", model.SellingPrice);
@@ -36,42 +35,52 @@ namespace ProductManagement_Api.Data
                 var p = cmd.Parameters.Add("@Photo", SqlDbType.VarBinary, -1);
                 p.Value = DBNull.Value;
             }
-
-            cmd.Parameters.AddWithValue("@PunchDate", model.PunchDate == default ? DateTime.UtcNow : model.PunchDate);
-
+            cmd.Parameters.AddWithValue("@PunchDate", model.PunchDate == default ? DateTime.Now : model.PunchDate);
             await con.OpenAsync();
             await cmd.ExecuteNonQueryAsync();
         }
 
         public async Task EditItemAsync(ItemModel model)
         {
-            using SqlConnection con = new SqlConnection(_connString);
-            using SqlCommand cmd = new SqlCommand("EditItem", con);
-            cmd.CommandType = CommandType.StoredProcedure;
-
-            cmd.Parameters.AddWithValue("@ItemCode", model.ItemCode);
-            cmd.Parameters.AddWithValue("@Description", model.Description);
-            cmd.Parameters.AddWithValue("@SellingPrice", model.SellingPrice);
-            cmd.Parameters.AddWithValue("@CostPrice", model.CostPrice);
-
-            if (!string.IsNullOrEmpty(model.PhotoBase64))
+            try
             {
-                byte[] photoBytes = Convert.FromBase64String(model.PhotoBase64);
-                var p = cmd.Parameters.Add("@Photo", SqlDbType.VarBinary, -1);
-                p.Value = photoBytes;
+                using SqlConnection con = new SqlConnection(_connString);
+                using SqlCommand cmd = new SqlCommand("EditItem", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@ItemCode", model.ItemCode);
+                cmd.Parameters.AddWithValue("@Description", model.Description);
+                cmd.Parameters.AddWithValue("@SellingPrice", model.SellingPrice);
+                cmd.Parameters.AddWithValue("@CostPrice", model.CostPrice);
+                if (!string.IsNullOrWhiteSpace(model.PhotoBase64))
+                {
+                    try
+                    {
+                        byte[] photoBytes = Convert.FromBase64String(model.PhotoBase64);
+
+                        var p = cmd.Parameters.Add("@Photo", SqlDbType.VarBinary, -1);
+                        p.Value = photoBytes;
+                    }
+                    catch (FormatException ex)
+                    {
+                        throw new Exception("Invalid Base64 string for Photo. Please send a valid image Base64.", ex);
+                    }
+                }
+                else
+                {
+                    var p = cmd.Parameters.Add("@Photo", SqlDbType.VarBinary, -1);
+                    p.Value = DBNull.Value;
+                }
+                cmd.Parameters.AddWithValue("@PunchDate",
+                    model.PunchDate == default ? DateTime.Now : model.PunchDate);
+
+                await con.OpenAsync();
+                await cmd.ExecuteNonQueryAsync();
             }
-            else
+            catch (Exception ex)
             {
-                var p = cmd.Parameters.Add("@Photo", SqlDbType.VarBinary, -1);
-                p.Value = DBNull.Value;
+                throw new Exception($"EditItemAsync failed: {ex.Message}", ex);
             }
-
-            cmd.Parameters.AddWithValue("@PunchDate", model.PunchDate == default ? DateTime.UtcNow : model.PunchDate);
-
-            await con.OpenAsync();
-            await cmd.ExecuteNonQueryAsync();
         }
-
         public async Task DeleteItemAsync(string itemCode)
         {
             using SqlConnection con = new SqlConnection(_connString);
@@ -82,7 +91,6 @@ namespace ProductManagement_Api.Data
             await con.OpenAsync();
             await cmd.ExecuteNonQueryAsync();
         }
-
         public async Task<List<ItemModel>> GetAllItemsAsync()
         {
             List<ItemModel> list = new List<ItemModel>();
@@ -112,10 +120,8 @@ namespace ProductManagement_Api.Data
                 {
                     item.PhotoBase64 = null;
                 }
-
                 list.Add(item);
             }
-
             return list;
         }
     }

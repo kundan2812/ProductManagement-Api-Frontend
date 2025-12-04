@@ -10,26 +10,23 @@ namespace ProductManagement_Api.Controllers
     public class ItemsController : Controller
     {
         private readonly ItemRepository _repo;
-
         public ItemsController(ItemRepository repo)
         {
             _repo = repo;
         }
-
         [HttpGet("ListItems")]
         public async Task<IActionResult> ListItems()
         {
             var items = await _repo.GetAllItemsAsync();
             return Ok(items);
         }
-
         [HttpPost("AddItem")]
         public async Task<IActionResult> AddItem([FromBody] ItemModel model)
         {
             if (model == null) return BadRequest("Invalid payload");
             try
             {
-                model.PunchDate = DateTime.UtcNow;
+                model.PunchDate = DateTime.Now;
                 await _repo.AddItemAsync(model);
                 return Ok(new { message = "Item added successfully" });
             }
@@ -38,14 +35,13 @@ namespace ProductManagement_Api.Controllers
                 return StatusCode(500, new { message = "Database error", detail = ex.Message });
             }
         }
-
         [HttpPut("EditItem")]
         public async Task<IActionResult> EditItem([FromBody] ItemModel model)
         {
             if (model == null) return BadRequest("Invalid payload");
             try
             {
-                model.PunchDate = DateTime.UtcNow;
+                model.PunchDate = DateTime.Now;
                 await _repo.EditItemAsync(model);
                 return Ok(new { message = "Item updated successfully" });
             }
@@ -54,7 +50,6 @@ namespace ProductManagement_Api.Controllers
                 return StatusCode(500, new { message = "Database error", detail = ex.Message });
             }
         }
-
         [HttpDelete("DeleteItem/{itemCode}")]
         public async Task<IActionResult> DeleteItem(string itemCode)
         {

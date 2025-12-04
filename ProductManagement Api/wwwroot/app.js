@@ -2,109 +2,114 @@
 
 app.controller("productCtrl", function ($scope, $http) {
 
+    const baseUrl = "https://localhost:7128/api/Items";
     $scope.items = [];
-    $scope.form = {};  // FIXED (form instead of item)
+    $scope.showForm = false;
     $scope.isEdit = false;
+    $scope.form = {};
+    $scope.message = "";
+    $scope.success = true;
+    $scope.placeholder = "placeholder.png";
 
-    // SHOW MESSAGE
-    $scope.showMessage = function (msg, type) {
-        $scope.message = msg;
-        $scope.success = type === "success";
-
-        setTimeout(() => {
-            $scope.message = null;
-            $scope.$apply();
-        }, 2000);
+    $scope.init = function () {
+        $scope.loadItems();
     };
 
-    // LOAD ITEMS
     $scope.loadItems = function () {
-        $http.get("https://localhost:7128/api/Items/ListItems").then(
-            function (response) {
+        $http.get(baseUrl + "/ListItems")
+            .then(function (response) {
                 $scope.items = response.data;
-            },
-            function () {
-                $scope.showMessage("Failed to load items", "error");
-            }
-        );
+            }, function () {
+                $scope.showMessage("Error loading items", false);
+            });
     };
 
-    // FILE → BASE64
-    $scope.onFileChange = function (input) {
-        let file = input.files[0];
-        if (!file) return;
-
-        let reader = new FileReader();
-        reader.onload = function (e) {
-            let base64 = e.target.result.split(',')[1];
-            $scope.form.photoBase64 = base64;
-            $scope.$apply();
-        };
-        reader.readAsDataURL(file);
+    $scope.showAddForm = function () {
+        $scope.showForm = true;
+        $scope.isEdit = false;
+        $scope.form = {};
+        $scope.clearMessage();
     };
 
-    // SAVE ITEM
+    $scope.editItem = function (item) {
+        $scope.showForm = true;
+        $scope.isEdit = true;
+        $scope.form = angular.copy(item);
+        $scope.clearMessage();
+    };
+
+    $scope.deleteItem = function (code) {
+        if (!confirm("Delete this item?")) return;
+
+        $http.delete(baseUrl + "/DeleteItem/" + code)
+            .then(() => {
+                $scope.showMessage("Item deleted successfully", true);
+                $scope.loadItems();
+            }, () => $scope.showMessage("Error deleting item", false));
+    };
     $scope.saveItem = function () {
-
-        if (!$scope.form.itemCode || !$scope.form.description) {
-            $scope.showMessage("Please fill required fields", "error");
+        if (!$scope.form.itemCode || !$scope.form.description ||
+            !$scope.form.sellingPrice || !$scope.form.costPrice) {
+            $scope.showMessage("Please fill all required fields!", false);
             return;
         }
 
+        if ($scope.form.photoFile) {
+            const file = $scope.form.photoFile;
+            if (!file.type.startsWith("image/")) {
+                $scope.showMessage("Only image files allowed!", false);
+                return;
+            }
+            if (file.size > 3 * 1024 * 1024) {
+                $scope.showMessage("Image size must be less than 2MB!", false);
+                return;
+            }
+        }
         if ($scope.isEdit) {
-            // UPDATE
-            $http.put("https://localhost:7128/api/Items/EditItem", $scope.form).then(
-                function () {
-                    $scope.showMessage("Item updated successfully!", "success");
-                    $scope.cancelForm();
+            $http.put(baseUrl + "/EditItem", $scope.form)
+                .then(() => {
+                    $scope.showMessage("Item updated successfully!", true);
                     $scope.loadItems();
-                }
-            );
+                    $scope.cancelForm();
+                }, () => $scope.showMessage("Error updating item", false));
         } else {
-            // ADD
-            $http.post("https://localhost:7128/api/Items/AddItem", $scope.form).then(
-                function () {
-                    $scope.showMessage("Item added successfully!", "success");
-                    $scope.cancelForm();
+            $http.post(baseUrl + "/AddItem", $scope.form)
+                .then(() => {
+                    $scope.showMessage("Item added successfully!", true);
                     $scope.loadItems();
-                }
-            );
+                    $scope.cancelForm();
+                }, () => $scope.showMessage("Error adding item", false));
         }
     };
-
-    // EDIT
-    $scope.editItem = function (item) {
-        $scope.form = angular.copy(item);
-        $scope.isEdit = true;
-        $scope.showForm = true;
-    };
-
-    // DELETE
-    $scope.deleteItem = function (code) {
-        if (!confirm("Are you sure?")) return;
-
-        $http.delete("https://localhost:7128/api/Items/DeleteItem/" + code).then(
-            function () {
-                $scope.showMessage("Item deleted successfully!", "success");
-                $scope.loadItems();
-            }
-        );
-    };
-
-    // SHOW FORM
-    $scope.showAddForm = function () {
-        $scope.form = {};
-        $scope.isEdit = false;
-        $scope.showForm = true;
-    };
-
-    // CANCEL
     $scope.cancelForm = function () {
         $scope.showForm = false;
         $scope.form = {};
-        $scope.isEdit = false;
+        $scope.clearMessage();
+    };
+    $scope.onFileChange = function (element) {
+        const file = element.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                $scope.$apply(function () {
+                    $scope.form.photoBase64 = e.target.result.split(",")[1]; 
+                    $scope.form.photoFile = file; 
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    $scope.showMessage = function (msg, isSuccess) {
+        $scope.message = msg;
+        $scope.success = isSuccess;
+        setTimeout(() => {
+            $scope.$apply(function () { $scope.message = ""; });
+        }, 4000);
     };
 
-    // AUTO LOAD ITEMS
-    $scope.loadItems();
+    $scope.clearMessage = function () {
+        $scope.message = "";
+    };
+
+    $scope.init();
 });

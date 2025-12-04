@@ -25,8 +25,6 @@ namespace ProductManagement_Api.Data
             cmd.Parameters.AddWithValue("@Description", model.Description);
             cmd.Parameters.AddWithValue("@SellingPrice", model.SellingPrice);
             cmd.Parameters.AddWithValue("@CostPrice", model.CostPrice);
-
-            // Photo handling: convert base64 -> byte[]
             if (!string.IsNullOrEmpty(model.PhotoBase64))
             {
                 byte[] photoBytes = Convert.FromBase64String(model.PhotoBase64);
@@ -105,8 +103,6 @@ namespace ProductManagement_Api.Data
                     CostPrice = reader["CostPrice"] == DBNull.Value ? 0 : Convert.ToDouble(reader["CostPrice"]),
                     PunchDate = reader["PunchDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(reader["PunchDate"])
                 };
-
-                // Photo: handle DBNull
                 if (reader["Photo"] != DBNull.Value)
                 {
                     byte[] photoBytes = (byte[])reader["Photo"];

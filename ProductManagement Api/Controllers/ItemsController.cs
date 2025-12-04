@@ -35,7 +35,6 @@ namespace ProductManagement_Api.Controllers
             }
             catch (SqlException ex)
             {
-                // log ex
                 return StatusCode(500, new { message = "Database error", detail = ex.Message });
             }
         }
